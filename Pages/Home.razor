@@ -1,0 +1,192 @@
+﻿@page "/"
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Modulator Configurator</PageTitle>
+
+<div class="min-vh-100 bg-light p-4">
+    <header class="mb-4">
+        <h1 class="display-5 fw-bold">Modulator Configurator</h1>
+    </header>
+    
+    <button class="btn btn-success btn-lg mb-4" @onclick="AddModulator">
+        Add modulator
+    </button>
+    
+    @for (int i = 0; i < modulators.Count; i++)
+    {
+        int modulatorIndex = i; // Capture for closure
+        var modulator = modulators[modulatorIndex];
+        
+        <div class="border rounded shadow bg-white p-4 my-4 position-relative">
+            <button class="btn-close position-absolute top-0 end-0 m-2" 
+                    @onclick="@(() => RemoveModulator(modulatorIndex))">&times;</button>
+            
+            <input type="text" 
+                   @bind="modulator.Name" 
+                   class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" />
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input class="form-control mb-2" 
+                           @bind="modulator.Frequency" 
+                           placeholder="Frequency" />
+                </div>
+                <div class="col-md-6">
+                    <input class="form-control mb-2" 
+                           @bind="modulator.Deadtime" 
+                           placeholder="Deadtime" />
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input class="form-control" 
+                           @bind="modulator.DutyCycle" 
+                           placeholder="Duty-cycle" />
+                </div>
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               @bind="modulator.IsInverted" 
+                               id="inverted-@modulator.Id" />
+                        <label class="form-check-label" for="inverted-@modulator.Id">
+                            Inverted (HS / LS referred)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button class="btn btn-primary" @onclick="@(() => AddPhase(modulatorIndex))">Add phase</button>
+            </div>
+            
+            @for (int j = 0; j < modulator.Phases.Count; j++)
+            {
+                int phaseIndex = j; // Capture for closure
+                var phase = modulator.Phases[phaseIndex];
+                
+                <div class="border rounded p-3 my-2 bg-light position-relative">
+                    <button class="btn-close position-absolute top-0 end-0 m-1" 
+                            @onclick="@(() => RemovePhase(modulatorIndex, phaseIndex))">&times;</button>
+                    
+                    <h6 class="fw-semibold">Phase @(phaseIndex + 1)</h6>
+                    
+                    <input class="form-control mb-2" 
+                           @bind="phase.Pwm" 
+                           placeholder="PWM" />
+                    
+                    <input class="form-control mb-2" 
+                           @bind="phase.PhaseShift" 
+                           placeholder="Phase Shift" />
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               @bind="phase.GenerateIsr" 
+                               id="generateIsr-@phase.Id" />
+                        <label class="form-check-label" for="generateIsr-@phase.Id">
+                            Generate ISR
+                        </label>
+                    </div>
+                    
+                    @if (phase.GenerateIsr)
+                    {
+                        <div class="mb-2">
+                            <label class="form-label">ISR Trigger Source</label>
+                            <select class="form-select" @bind="phase.IsrTriggerSource">
+                                <option value="Period match">Period match</option>
+                                <option value="Compare 0 match">Compare 0 match</option>
+                                <option value="Compare 1 match">Compare 1 match</option>
+                            </select>
+                        </div>
+                    }
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               @bind="phase.TriggerAdc" 
+                               id="triggerAdc-@phase.Id" />
+                        <label class="form-check-label" for="triggerAdc-@phase.Id">
+                            Trigger ADC
+                        </label>
+                    </div>
+                    
+                    @if (phase.TriggerAdc)
+                    {
+                        <div class="mb-2">
+                            <label class="form-label">Select Trigger Source</label>
+                            <select class="form-select" @bind="phase.AdcTriggerSource">
+                                @for (int k = 0; k < 8; k++)
+                                {
+                                    <option value="TR@k">TR@k</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ModulatorModel> modulators = new();
+    private int nextModulatorId = 1;
+    private int nextPhaseId = 1;
+
+    private void AddModulator()
+    {
+        modulators.Add(new ModulatorModel { 
+            Id = nextModulatorId++, 
+            Name = $"Modulator {modulators.Count + 1}" 
+        });
+    }
+
+    private void RemoveModulator(int index)
+    {
+        if (index >= 0 && index < modulators.Count)
+        {
+            modulators.RemoveAt(index);
+        }
+    }
+
+    private void AddPhase(int modulatorIndex)
+    {
+        if (modulatorIndex >= 0 && modulatorIndex < modulators.Count)
+        {
+            modulators[modulatorIndex].Phases.Add(new PhaseModel { Id = nextPhaseId++ });
+        }
+    }
+
+    private void RemovePhase(int modulatorIndex, int phaseIndex)
+    {
+        if (modulatorIndex >= 0 && modulatorIndex < modulators.Count && 
+            phaseIndex >= 0 && phaseIndex < modulators[modulatorIndex].Phases.Count)
+        {
+            modulators[modulatorIndex].Phases.RemoveAt(phaseIndex);
+        }
+    }
+
+    public class ModulatorModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Frequency { get; set; } = "";
+        public string Deadtime { get; set; } = "";
+        public string DutyCycle { get; set; } = "";
+        public bool IsInverted { get; set; } = false;
+        public List<PhaseModel> Phases { get; set; } = new();
+    }
+
+    public class PhaseModel
+    {
+        public int Id { get; set; }
+        public string Pwm { get; set; } = "";
+        public string PhaseShift { get; set; } = "";
+        public bool GenerateIsr { get; set; } = false;
+        public string IsrTriggerSource { get; set; } = "Period match";
+        public bool TriggerAdc { get; set; } = false;
+        public string AdcTriggerSource { get; set; } = "TR0";
+    }
+}

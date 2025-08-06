@@ -1,0 +1,76 @@
+@using static Pages.Home
+
+<div class="border rounded shadow bg-white p-4 my-4 position-relative">
+    <button class="btn-close position-absolute top-0 end-0 m-2" @onclick="OnRemove">&times;</button>
+    
+    <input type="text" 
+           @bind="Modulator.Name" 
+           class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" />
+    
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input class="form-control mb-2" 
+                   @bind="Modulator.Frequency" 
+                   placeholder="Frequency" />
+        </div>
+        <div class="col-md-6">
+            <input class="form-control mb-2" 
+                   @bind="Modulator.Deadtime" 
+                   placeholder="Deadtime" />
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input class="form-control" 
+                   @bind="Modulator.DutyCycle" 
+                   placeholder="Duty-cycle" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <div class="form-check">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       @bind="Modulator.IsInverted" 
+                       id="inverted-@Modulator.Id" />
+                <label class="form-check-label" for="inverted-@Modulator.Id">
+                    Inverted (HS / LS referred)
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <button class="btn btn-primary" @onclick="AddPhase">Add phase</button>
+    </div>
+    
+    @for (int i = 0; i < Modulator.Phases.Count; i++)
+    {
+        int phaseIndex = i; // Capture for closure
+        <PhaseComponent 
+            @key="Modulator.Phases[phaseIndex].Id"
+            Phase="Modulator.Phases[phaseIndex]" 
+            Index="phaseIndex" 
+            OnRemove="@(() => RemovePhase(phaseIndex))" />
+    }
+</div>
+
+@code {
+    [Parameter] public ModulatorModel Modulator { get; set; } = new();
+    [Parameter] public int Index { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private int nextPhaseId = 1;
+
+    private void AddPhase()
+    {
+        Modulator.Phases.Add(new PhaseModel { Id = nextPhaseId++ });
+    }
+
+    private void RemovePhase(int index)
+    {
+        if (index >= 0 && index < Modulator.Phases.Count)
+        {
+            Modulator.Phases.RemoveAt(index);
+        }
+    }
+}

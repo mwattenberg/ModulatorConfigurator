@@ -1,0 +1,66 @@
+@using static Pages.Home
+
+<div class="border rounded p-3 my-2 bg-light position-relative">
+    <button class="btn-close position-absolute top-0 end-0 m-1" @onclick="OnRemove"></button>
+    
+    <h6 class="fw-semibold">Phase @(Index + 1)</h6>
+    
+    <input class="form-control mb-2" 
+           @bind="Phase.Pwm" 
+           placeholder="PWM" />
+    
+    <input class="form-control mb-2" 
+           @bind="Phase.PhaseShift" 
+           placeholder="Phase Shift" />
+    
+    <div class="form-check mb-2">
+        <input class="form-check-input" 
+               type="checkbox" 
+               @bind="Phase.GenerateIsr" 
+               id="generateIsr-@Phase.Id" />
+        <label class="form-check-label" for="generateIsr-@Phase.Id">
+            Generate ISR
+        </label>
+    </div>
+    
+    @if (Phase.GenerateIsr)
+    {
+        <div class="mb-2">
+            <label class="form-label">ISR Trigger Source</label>
+            <select class="form-select" @bind="Phase.IsrTriggerSource">
+                <option value="Period match">Period match</option>
+                <option value="Compare 0 match">Compare 0 match</option>
+                <option value="Compare 1 match">Compare 1 match</option>
+            </select>
+        </div>
+    }
+    
+    <div class="form-check mb-2">
+        <input class="form-check-input" 
+               type="checkbox" 
+               @bind="Phase.TriggerAdc" 
+               id="triggerAdc-@Phase.Id" />
+        <label class="form-check-label" for="triggerAdc-@Phase.Id">
+            Trigger ADC
+        </label>
+    </div>
+    
+    @if (Phase.TriggerAdc)
+    {
+        <div class="mb-2">
+            <label class="form-label">Select Trigger Source</label>
+            <select class="form-select" @bind="Phase.AdcTriggerSource">
+                @for (int i = 0; i < 8; i++)
+                {
+                    <option value="TR@i">TR@i</option>
+                }
+            </select>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public PhaseModel Phase { get; set; } = new();
+    [Parameter] public int Index { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+}
