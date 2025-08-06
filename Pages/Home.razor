@@ -1,5 +1,8 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
+@inject ModusFileParserService ModusParser
+@inject ModulatorCodeGeneratorService CodeGenerator
+@implements IAsyncDisposable
 
 <PageTitle>Modulator Configurator</PageTitle>
 
@@ -8,10 +11,70 @@
         <h1 class="display-5 fw-bold">Modulator Configurator</h1>
     </header>
     
-    <button class="btn btn-success btn-lg mb-4" @onclick="AddModulator">
-        Add modulator
-    </button>
+    <!-- File Upload Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-upload me-2"></i>
+                Import .modus Configuration File
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Drop Zone -->
+            <div @ref="dropZoneElement" class="file-drop-zone" @onclick="TriggerFileInput">
+                <div class="upload-icon">📁</div>
+                <h6>Drop your .modus file here</h6>
+                <p class="text-muted mb-0">or click to browse files</p>
+                <small class="text-muted">Only .modus files are supported</small>
+            </div>
+            
+            <!-- Hidden File Input -->
+            <input type="file" 
+                   @ref="fileInputElement" 
+                   @onchange="OnFileInputChange"
+                   accept=".modus"
+                   style="display: none;" />
+            
+            <!-- File Status -->
+            @if (!string.IsNullOrEmpty(uploadStatus))
+            {
+                <div class="alert @(uploadSuccess ? "alert-success" : "alert-danger") mt-3">
+                    <i class="fas @(uploadSuccess ? "fa-check-circle" : "fa-exclamation-triangle") me-2"></i>
+                    @uploadStatus
+                </div>
+            }
+            
+            <!-- Parsed PWMs Display (Read-only) -->
+            @if (parsedModulators.Any())
+            {
+                <div class="mt-3">
+                    <h6>Found PWM Modulators (@parsedModulators.Count):</h6>
+                    <div class="row">
+                        @foreach (var pwm in parsedModulators)
+                        {
+                            <div class="col-md-6 col-lg-4 col-xl-3 mb-2">
+                                <div class="card card-body bg-light">
+                                    <h6 class="mb-1 text-primary">@pwm.Alias</h6>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
     
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <button class="btn btn-success btn-lg me-3" @onclick="AddModulator">
+            Add Modulator
+        </button>
+        <button class="btn btn-primary btn-lg" @onclick="GenerateCode">
+            Generate Code
+        </button>
+    </div>
+    
+    <!-- Existing Modulators -->
     @for (int i = 0; i < modulators.Count; i++)
     {
         int modulatorIndex = i; // Capture for closure
@@ -23,7 +86,8 @@
             
             <input type="text" 
                    @bind="modulator.Name" 
-                   class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" />
+                   class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" 
+                   placeholder="Modulator Name" />
             
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -72,9 +136,34 @@
                     
                     <h6 class="fw-semibold">Phase @(phaseIndex + 1)</h6>
                     
-                    <input class="form-control mb-2" 
-                           @bind="phase.Pwm" 
-                           placeholder="PWM" />
+                    <!-- PWM Selection: Dropdown if parsed PWMs available, otherwise text input -->
+                    @if (parsedModulators.Any())
+                    {
+                        <div class="mb-2">
+                            <label class="form-label">PWM</label>
+                            <select class="form-select" @bind="phase.Pwm">
+                                <option value="">-- Select PWM or enter manually --</option>
+                                @foreach (var pwm in parsedModulators)
+                                {
+                                    <option value="@pwm.Alias">@pwm.Alias</option>
+                                }
+                            </select>
+                        </div>
+                        
+                        <!-- Manual PWM input if "Custom" or specific option selected -->
+                        <div class="mb-2">
+                            <label class="form-label">Manual PWM Entry (optional)</label>
+                            <input class="form-control" 
+                                   @bind="phase.Pwm" 
+                                   placeholder="Enter PWM name manually" />
+                        </div>
+                    }
+                    else
+                    {
+                        <input class="form-control mb-2" 
+                               @bind="phase.Pwm" 
+                               placeholder="PWM" />
+                    }
                     
                     <input class="form-control mb-2" 
                            @bind="phase.PhaseShift" 
@@ -119,7 +208,8 @@
                             <select class="form-select" @bind="phase.AdcTriggerSource">
                                 @for (int k = 0; k < 8; k++)
                                 {
-                                    <option value="TR@k">TR@k</option>
+                                    var triggerName = $"TR{k}";
+                                    <option value="@triggerName">@triggerName</option>
                                 }
                             </select>
                         </div>
@@ -130,10 +220,141 @@
     }
 </div>
 
+<!-- Generated Code Modal -->
+@if (showCodeModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generated Code</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCodeModal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link @(activeTab == "header" ? "active" : "")" 
+                                    @onclick="@(() => activeTab = "header")">
+                                @(generatedHeaderFileName ?? "modulator_config.h")
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(activeTab == "source" ? "active" : "")" 
+                                    @onclick="@(() => activeTab = "source")">
+                                @(generatedSourceFileName ?? "modulator_config.c")
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content mt-3">
+                        @if (activeTab == "header")
+                        {
+                            <pre class="bg-dark text-light p-3" style="height: 500px; overflow-y: auto;"><code>@generatedHeaderCode</code></pre>
+                        }
+                        else
+                        {
+                            <pre class="bg-dark text-light p-3" style="height: 500px; overflow-y: auto;"><code>@generatedSourceCode</code></pre>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCodeModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="DownloadFiles">Download Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<ModulatorModel> modulators = new();
+    private List<ModusFileParserService.PwmModulator> parsedModulators = new();
     private int nextModulatorId = 1;
     private int nextPhaseId = 1;
+    
+    private ElementReference dropZoneElement;
+    private ElementReference fileInputElement;
+    private IJSObjectReference? jsModule;
+    private DotNetObjectReference<Home>? dotNetRef;
+    
+    private string uploadStatus = "";
+    private bool uploadSuccess = false;
+    private bool showCodeModal = false;
+    private string activeTab = "header";
+    private string generatedHeaderCode = "";
+    private string generatedSourceCode = "";
+    private string generatedHeaderFileName = "modulator_config.h";
+    private string generatedSourceFileName = "modulator_config.c";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupFileDropZone", dropZoneElement, dotNetRef);
+        }
+    }
+
+    private async Task TriggerFileInput()
+    {
+        await JSRuntime.InvokeVoidAsync("triggerFileInput", fileInputElement);
+    }
+
+    private async Task OnFileInputChange(ChangeEventArgs e)
+    {
+        await JSRuntime.InvokeVoidAsync("handleFileInput", fileInputElement, dotNetRef);
+    }
+
+    [JSInvokable]
+    public async Task OnFileSelected(string fileName, string content)
+    {
+        await ProcessModusFile(fileName, content);
+    }
+
+    [JSInvokable]
+    public async Task OnFileDropped(string fileName, string content)
+    {
+        await ProcessModusFile(fileName, content);
+    }
+
+    [JSInvokable]
+    public async Task OnFileError(string error)
+    {
+        uploadStatus = error;
+        uploadSuccess = false;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task ProcessModusFile(string fileName, string content)
+    {
+        try
+        {
+            var result = ModusParser.ParseModusFile(content);
+            
+            if (result.Success)
+            {
+                parsedModulators = result.PwmModulators;
+                uploadStatus = $"Successfully parsed {fileName}. Found {result.PwmModulators.Count} PWM modulators.";
+                uploadSuccess = true;
+            }
+            else
+            {
+                uploadStatus = result.ErrorMessage;
+                uploadSuccess = false;
+                parsedModulators.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadStatus = $"Error processing file: {ex.Message}";
+            uploadSuccess = false;
+            parsedModulators.Clear();
+        }
+        
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
 
     private void AddModulator()
     {
@@ -165,6 +386,90 @@
             phaseIndex >= 0 && phaseIndex < modulators[modulatorIndex].Phases.Count)
         {
             modulators[modulatorIndex].Phases.RemoveAt(phaseIndex);
+        }
+    }
+
+    private void GenerateCode()
+    {
+        try
+        {
+            if (!modulators.Any())
+            {
+                uploadStatus = "Please add at least one modulator before generating code.";
+                uploadSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            var result = CodeGenerator.GenerateCode(modulators);
+            
+            if (result.Success)
+            {
+                generatedHeaderCode = result.HeaderFile;
+                generatedSourceCode = result.SourceFile;
+                generatedHeaderFileName = result.HeaderFileName ?? GetGeneratedFileName(".h");
+                generatedSourceFileName = result.SourceFileName ?? GetGeneratedFileName(".c");
+                showCodeModal = true;
+                uploadStatus = "Code generation completed successfully!";
+                uploadSuccess = true;
+            }
+            else
+            {
+                uploadStatus = $"Code generation failed: {result.ErrorMessage}";
+                uploadSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadStatus = $"Error generating code: {ex.Message}";
+            uploadSuccess = false;
+        }
+        
+        StateHasChanged();
+    }
+
+    private void CloseCodeModal()
+    {
+        showCodeModal = false;
+    }
+
+    private string GetGeneratedFileName(string extension)
+    {
+        if (modulators.Any() && !string.IsNullOrWhiteSpace(modulators.First().Name))
+        {
+            var baseName = modulators.First().Name.ToLower()
+                .Replace(" ", "_")
+                .Replace("-", "_")
+                .Replace(".", "_");
+            return $"{baseName}{extension}";
+        }
+        return $"modulator_config{extension}";
+    }
+
+    private async Task DownloadFiles()
+    {
+        try
+        {
+            // Download header file with custom name
+            await JSRuntime.InvokeVoidAsync("downloadFile", generatedHeaderFileName, generatedHeaderCode);
+            
+            // Download source file with custom name
+            await JSRuntime.InvokeVoidAsync("downloadFile", generatedSourceFileName, generatedSourceCode);
+        }
+        catch (Exception ex)
+        {
+            uploadStatus = $"Error downloading files: {ex.Message}";
+            uploadSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotNetRef?.Dispose();
+        if (jsModule != null)
+        {
+            await jsModule.DisposeAsync();
         }
     }
 

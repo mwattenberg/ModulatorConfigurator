@@ -26,6 +26,78 @@
     </div>
     
     <script src="_framework/blazor.webassembly.js"></script>
+    
+    <script>
+        // File handling functions
+        window.readFileAsText = async (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                reader.onerror = function(e) {
+                    reject(new Error('Failed to read file'));
+                };
+                reader.readAsText(file);
+            });
+        };
+
+        window.setupFileDropZone = (element, dotNetRef) => {
+            element.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.add('drag-over');
+            });
+
+            element.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.remove('drag-over');
+            });
+
+            element.addEventListener('drop', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.remove('drag-over');
+                
+                const files = Array.from(e.dataTransfer.files);
+                const modusFiles = files.filter(f => f.name.toLowerCase().endsWith('.modus'));
+                
+                if (modusFiles.length > 0) {
+                    try {
+                        const content = await window.readFileAsText(modusFiles[0]);
+                        await dotNetRef.invokeMethodAsync('OnFileDropped', modusFiles[0].name, content);
+                    } catch (error) {
+                        console.error('Error reading file:', error);
+                        await dotNetRef.invokeMethodAsync('OnFileError', error.message);
+                    }
+                } else {
+                    await dotNetRef.invokeMethodAsync('OnFileError', 'Please drop a .modus file');
+                }
+            });
+        };
+
+        window.triggerFileInput = (element) => {
+            element.click();
+        };
+
+        window.handleFileInput = async (element, dotNetRef) => {
+            if (element.files && element.files[0]) {
+                const file = element.files[0];
+                if (file.name.toLowerCase().endsWith('.modus')) {
+                    try {
+                        const content = await window.readFileAsText(file);
+                        await dotNetRef.invokeMethodAsync('OnFileSelected', file.name, content);
+                    } catch (error) {
+                        console.error('Error reading file:', error);
+                        await dotNetRef.invokeMethodAsync('OnFileError', error.message);
+                    }
+                } else {
+                    await dotNetRef.invokeMethodAsync('OnFileError', 'Please select a .modus file');
+                }
+            }
+        };
+    </script>
 </body>
 
 </html>

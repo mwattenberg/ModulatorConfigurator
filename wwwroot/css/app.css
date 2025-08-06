@@ -138,6 +138,67 @@ code {
     color: #dc2626;
 }
 
+/* File drop zone styles */
+.file-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.file-drop-zone:hover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.file-drop-zone.drag-over {
+    border-color: #10b981;
+    background-color: #ecfdf5;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+.file-drop-zone .upload-icon {
+    font-size: 3rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+.file-drop-zone.drag-over .upload-icon {
+    color: #10b981;
+}
+
+/* PWM card styles */
+.card.card-body.bg-light {
+    border-left: 4px solid #3b82f6;
+    transition: all 0.2s ease;
+}
+
+.card.card-body.bg-light:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.text-primary {
+    color: #3b82f6 !important;
+}
+
+/* Form enhancements */
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
 /* Bootstrap utility classes */
 .min-vh-100 { min-height: 100vh !important; }
 .display-5 { font-size: calc(1.425rem + 2.1vw); font-weight: 300; line-height: 1.2; }

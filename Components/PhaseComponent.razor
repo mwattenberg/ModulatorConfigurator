@@ -52,7 +52,8 @@
             <select class="form-select" @bind="Phase.AdcTriggerSource">
                 @for (int i = 0; i < 8; i++)
                 {
-                    <option value="TR@i">TR@i</option>
+                    var triggerName = $"TR{i}";
+                    <option value="@triggerName">@triggerName</option>
                 }
             </select>
         </div>
