@@ -26,3 +26,26 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build and publish
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Deploy to GitHub Pages
+        uses: gh-pages/deploy@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          folder: ./publish/wwwroot
