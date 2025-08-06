@@ -82,20 +82,32 @@
         };
 
         window.handleFileInput = async (element, dotNetRef) => {
-            if (element.files && element.files[0]) {
-                const file = element.files[0];
-                if (file.name.toLowerCase().endsWith('.modus')) {
-                    try {
-                        const content = await window.readFileAsText(file);
-                        await dotNetRef.invokeMethodAsync('OnFileSelected', file.name, content);
-                    } catch (error) {
-                        console.error('Error reading file:', error);
-                        await dotNetRef.invokeMethodAsync('OnFileError', error.message);
-                    }
-                } else {
-                    await dotNetRef.invokeMethodAsync('OnFileError', 'Please select a .modus file');
+            const files = Array.from(element.files);
+            const modusFiles = files.filter(f => f.name.toLowerCase().endsWith('.modus'));
+            
+            if (modusFiles.length > 0) {
+                try {
+                    const content = await window.readFileAsText(modusFiles[0]);
+                    await dotNetRef.invokeMethodAsync('OnFileSelected', modusFiles[0].name, content);
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    await dotNetRef.invokeMethodAsync('OnFileError', error.message);
                 }
+            } else {
+                await dotNetRef.invokeMethodAsync('OnFileError', 'Please select a .modus file');
             }
+        };
+
+        // File download function for generated code
+        window.downloadFile = (filename, content) => {
+            const element = document.createElement('a');
+            const file = new Blob([content], { type: 'text/plain' });
+            element.href = URL.createObjectURL(file);
+            element.download = filename;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            URL.revokeObjectURL(element.href);
         };
     </script>
 </body>
