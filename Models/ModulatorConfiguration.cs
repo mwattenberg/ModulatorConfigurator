@@ -9,22 +9,31 @@ public class ModulatorConfiguration
 
 public class Modulator
 {
+    public int Id { get; set; }
     public string Name { get; set; } = "";
-    public double Frequency { get; set; } = 1000.0;
-    public double Deadtime { get; set; } = 0.0;
-    public double DutyCycle { get; set; } = 50.0;
-    public bool IsInverted { get; set; } = false;
+    public string Frequency { get; set; } = "";
+    public string Deadtime { get; set; } = "";
+    public string DutyCycle { get; set; } = "";
+    public int GroupNumber { get; set; } = 0; // 0, 1, or 2
+    public string TriggerStart { get; set; } = "";
+    public string TriggerStop { get; set; } = "";
+    public string TriggerSwap { get; set; } = "";
     public List<Phase> Phases { get; set; } = new();
 }
 
 public class Phase
 {
+    public int Id { get; set; }
+    public string Alias { get; set; } = "";
     public string Pwm { get; set; } = "";
-    public double PhaseShift { get; set; } = 0.0;
+    public string PhaseShift { get; set; } = "";
     public bool GenerateIsr { get; set; } = false;
-    public IsrTriggerSource IsrTriggerSource { get; set; } = IsrTriggerSource.PeriodMatch;
+    public string IsrTriggerSource { get; set; } = "Period match";
     public bool TriggerAdc { get; set; } = false;
-    public AdcTriggerSource AdcTriggerSource { get; set; } = AdcTriggerSource.TR0;
+    public string AdcTriggerSource { get; set; } = "TR0";
+    public PwmAlignment Alignment { get; set; } = PwmAlignment.CenterAligned;
+    public int GroupNumber { get; set; } = 0; // 0, 1, or 2
+    public bool IsInverted { get; set; } = false;
 }
 
 public enum IsrTriggerSource
@@ -38,3 +47,14 @@ public enum AdcTriggerSource
 {
     TR0, TR1, TR2, TR3, TR4, TR5, TR6, TR7
 }
+
+public enum PwmAlignment
+{
+    LeftAligned,
+    RightAligned,
+    CenterAligned
+}
+
+// Type aliases for compatibility with existing code
+public class ModulatorModel : Modulator { }
+public class PhaseModel : Phase { }

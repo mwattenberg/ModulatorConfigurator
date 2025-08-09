@@ -13,9 +13,9 @@ namespace ModulatorConfigurator.Services
             public string SourceFileName { get; set; } = "";
             public bool Success { get; set; }
             public string ErrorMessage { get; set; } = "";
-        }
+        }   
 
-        public CodeGenerationResult GenerateCode(List<Pages.Home.ModulatorModel> modulators)
+        public CodeGenerationResult GenerateCode(List<Modulator> modulators)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace ModulatorConfigurator.Services
             }
         }
 
-        private string GetBaseName(List<Pages.Home.ModulatorModel> modulators)
+        private string GetBaseName(List<Modulator> modulators)
         {
             if (modulators.Any() && !string.IsNullOrWhiteSpace(modulators.First().Name))
             {
@@ -62,7 +62,7 @@ namespace ModulatorConfigurator.Services
                       .ToLower();
         }
 
-        private string GetModulatorPrefix(Pages.Home.ModulatorModel modulator)
+        private string GetModulatorPrefix(Modulator modulator)
         {
             if (!string.IsNullOrWhiteSpace(modulator.Name))
             {
@@ -72,7 +72,7 @@ namespace ModulatorConfigurator.Services
             return "MODULATOR";
         }
 
-        private string GenerateHeaderFile(List<Pages.Home.ModulatorModel> modulators, string baseName)
+        private string GenerateHeaderFile(List<Modulator> modulators, string baseName)
         {
             var sb = new StringBuilder();
             var guardName = $"{baseName.ToUpper()}_H";
@@ -104,7 +104,7 @@ namespace ModulatorConfigurator.Services
             return sb.ToString();
         }
         
-        private string GenerateSourceFile(List<Pages.Home.ModulatorModel> modulators, string baseName)
+        private string GenerateSourceFile(List<Modulator> modulators, string baseName)
         {
             var sb = new StringBuilder();
             
@@ -132,7 +132,7 @@ namespace ModulatorConfigurator.Services
             return sb.ToString();
         }
         
-        private void GenerateEnumsAndDefines(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateEnumsAndDefines(StringBuilder sb, List<Modulator> modulators)
         {
             sb.AppendLine("/* Modulator Configuration Enums and Defines */");
             sb.AppendLine();
@@ -200,7 +200,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateStructures(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateStructures(StringBuilder sb, List<Modulator> modulators)
         {
             // Generate individual phase config structures for each modulator
             foreach (var modulator in modulators)
@@ -243,7 +243,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateFunctionPrototypes(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateFunctionPrototypes(StringBuilder sb, List<Modulator> modulators)
         {
             foreach (var modulator in modulators)
             {
@@ -277,7 +277,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateConfigurationInstances(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateConfigurationInstances(StringBuilder sb, List<Modulator> modulators)
         {
             sb.AppendLine("/* Static helper functions */");
             foreach (var modulator in modulators)
@@ -298,7 +298,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateInitializationFunctions(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateInitializationFunctions(StringBuilder sb, List<Modulator> modulators)
         {
             foreach (var modulator in modulators)
             {
@@ -379,7 +379,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateControlFunctions(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateControlFunctions(StringBuilder sb, List<Modulator> modulators)
         {
             foreach (var modulator in modulators)
             {
@@ -500,7 +500,7 @@ namespace ModulatorConfigurator.Services
             }
         }
         
-        private void GenerateInterruptHandlers(StringBuilder sb, List<Pages.Home.ModulatorModel> modulators)
+        private void GenerateInterruptHandlers(StringBuilder sb, List<Modulator> modulators)
         {
             foreach (var modulator in modulators)
             {

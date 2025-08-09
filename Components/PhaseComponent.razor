@@ -1,4 +1,4 @@
-@using static Pages.Home
+@using ModulatorConfigurator.Models
 
 <div class="border rounded p-3 my-2 bg-light position-relative">
     <button class="btn-close position-absolute top-0 end-0 m-1" @onclick="OnRemove"></button>
@@ -61,7 +61,7 @@
 </div>
 
 @code {
-    [Parameter] public PhaseModel Phase { get; set; } = new();
+    [Parameter] public Phase Phase { get; set; } = new();
     [Parameter] public int Index { get; set; }
     [Parameter] public EventCallback OnRemove { get; set; }
 }

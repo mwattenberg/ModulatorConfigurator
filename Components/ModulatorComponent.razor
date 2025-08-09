@@ -1,11 +1,12 @@
-@using static Pages.Home
+@using ModulatorConfigurator.Models
 
 <div class="border rounded shadow bg-white p-4 my-4 position-relative">
     <button class="btn-close position-absolute top-0 end-0 m-2" @onclick="OnRemove">&times;</button>
     
     <input type="text" 
            @bind="Modulator.Name" 
-           class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" />
+           class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" 
+           placeholder="Modulator Name" />
     
     <div class="row mb-3">
         <div class="col-md-6">
@@ -26,19 +27,43 @@
                    @bind="Modulator.DutyCycle" 
                    placeholder="Duty-cycle" />
         </div>
-        <div class="col-md-6 d-flex align-items-center">
-            <div class="form-check">
-                <input class="form-check-input" 
-                       type="checkbox" 
-                       @bind="Modulator.IsInverted" 
-                       id="inverted-@Modulator.Id" />
-                <label class="form-check-label" for="inverted-@Modulator.Id">
-                    Inverted (HS / LS referred)
-                </label>
-            </div>
+
+    </div>
+
+    <!-- Trigger Settings - All in one row -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Trigger Start</label>
+            <select class="form-select" @bind="Modulator.TriggerStart">
+                <option value="">-- Select Trigger Start --</option>
+                @foreach (var option in GetTriggerOptions(Modulator.GroupNumber))
+                {
+                    <option value="@option">@option</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Trigger Stop</label>
+            <select class="form-select" @bind="Modulator.TriggerStop">
+                <option value="">-- Select Trigger Stop --</option>
+                @foreach (var option in GetTriggerOptions(Modulator.GroupNumber))
+                {
+                    <option value="@option">@option</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Trigger Swap</label>
+            <select class="form-select" @bind="Modulator.TriggerSwap">
+                <option value="">-- Select Trigger Swap --</option>
+                @foreach (var option in GetTriggerOptions(Modulator.GroupNumber))
+                {
+                    <option value="@option">@option</option>
+                }
+            </select>
         </div>
     </div>
-    
+
     <div class="mt-4">
         <button class="btn btn-primary" @onclick="AddPhase">Add phase</button>
     </div>
@@ -72,5 +97,38 @@
         {
             Modulator.Phases.RemoveAt(index);
         }
+    }
+
+    private List<string> GetTriggerOptions(int groupNumber)
+    {
+        if (groupNumber == 0)
+        {
+            return new List<string>
+            {
+                "TRIG_OUT_MUX_9_TCPWM0_TR_IN0",
+                "TRIG_OUT_MUX_9_TCPWM0_TR_IN1",
+                "TRIG_OUT_MUX_9_TCPWM0_TR_IN2",
+                "TRIG_OUT_MUX_9_TCPWM0_TR_IN3"
+            };
+        }
+        else if (groupNumber == 1)
+        {
+            var options = new List<string>();
+            for (int i = 4; i <= 15; i++)
+            {
+                options.Add($"TRIG_OUT_MUX_10_TCPWM0_TR_IN{i}");
+            }
+            return options;
+        }
+        else if (groupNumber == 2)
+        {
+            var options = new List<string>();
+            for (int i = 1; i <= 10; i++)
+            {
+                options.Add($"TBD{i}");
+            }
+            return options;
+        }
+        return new List<string>();
     }
 }

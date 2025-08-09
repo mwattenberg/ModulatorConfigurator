@@ -1,19 +1,13 @@
 using System.Xml.Linq;
+using ModulatorConfigurator.Models;
 
 namespace ModulatorConfigurator.Services
 {
     public class ModusFileParserService
     {
-        public class PwmModulator
-        {
-            public string Alias { get; set; } = "";
-            public string Location { get; set; } = "";
-            public Dictionary<string, string> Parameters { get; set; } = new();
-        }
-
         public class ModusParseResult
         {
-            public List<PwmModulator> PwmModulators { get; set; } = new();
+            public List<Phase> Phases { get; set; } = new();
             public bool Success { get; set; }
             public string ErrorMessage { get; set; } = "";
         }
@@ -21,33 +15,30 @@ namespace ModulatorConfigurator.Services
         public ModusParseResult ParseModusFile(string xmlContent)
         {
             var result = new ModusParseResult();
-            
             try
             {
                 var doc = XDocument.Parse(xmlContent);
                 var ns = XNamespace.Get("http://cypress.com/xsd/cydesignfile_v5");
-                
-                // Find all Personality elements with template="mxs40pwm_ver2"
                 var pwmPersonalities = doc.Descendants(ns + "Personality")
                     .Where(p => p.Attribute("template")?.Value == "mxs40pwm_ver2");
 
+                int nextPhaseId = 1;
                 foreach (var personality in pwmPersonalities)
                 {
                     var block = personality.Element(ns + "Block");
                     if (block == null) continue;
 
                     var location = block.Attribute("location")?.Value ?? "";
-                    
-                    // Get the alias
                     var aliasElement = block.Element(ns + "Aliases")?.Element(ns + "Alias");
                     var alias = aliasElement?.Attribute("value")?.Value ?? "";
 
                     if (!string.IsNullOrEmpty(alias))
                     {
-                        var modulator = new PwmModulator
+                        var phase = new Phase
                         {
+                            Id = nextPhaseId++,
                             Alias = alias,
-                            Location = location
+                            Pwm = location
                         };
 
                         // Extract key parameters
@@ -58,18 +49,33 @@ namespace ModulatorConfigurator.Services
                             {
                                 var id = param.Attribute("id")?.Value;
                                 var value = param.Attribute("value")?.Value;
-                                
                                 if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(value))
                                 {
-                                    modulator.Parameters[id] = value;
+                                    // Map known parameters to Phase fields
+                                    switch (id)
+                                    {
+                                        case "PhaseShift":
+                                            phase.PhaseShift = value;
+                                            break;
+                                        case "IsInverted":
+                                            phase.IsInverted = value == "true";
+                                            break;
+                                        case "GroupNumber":
+                                            if (int.TryParse(value, out int groupNum))
+                                                phase.GroupNumber = groupNum;
+                                            break;
+                                        case "Alignment":
+                                            if (Enum.TryParse<PwmAlignment>(value, out var align))
+                                                phase.Alignment = align;
+                                            break;
+                                        // Add more mappings as needed
+                                    }
                                 }
                             }
                         }
-
-                        result.PwmModulators.Add(modulator);
+                        result.Phases.Add(phase);
                     }
                 }
-
                 result.Success = true;
             }
             catch (Exception ex)
@@ -77,7 +83,6 @@ namespace ModulatorConfigurator.Services
                 result.Success = false;
                 result.ErrorMessage = $"Error parsing .modus file: {ex.Message}";
             }
-
             return result;
         }
     }
