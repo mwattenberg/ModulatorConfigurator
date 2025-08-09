@@ -1,0 +1,127 @@
+﻿<div class="modulator-plot">
+    <h3>Modulator Plot</h3>
+    
+    <div class="plot-container">
+        <svg width="400" height="300" viewBox="0 0 400 300" class="plot-svg">
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+            
+            <!-- Grid lines -->
+            @for (int i = 0; i <= 10; i++)
+            {
+                <!-- Vertical grid lines -->
+                <line x1="@(40 + i * 32)" y1="40" x2="@(40 + i * 32)" y2="260" 
+                      stroke="#e9ecef" stroke-width="0.5" opacity="0.7"/>
+                <!-- Horizontal grid lines -->
+                <line x1="40" y1="@(40 + i * 22)" x2="360" y2="@(40 + i * 22)" 
+                      stroke="#e9ecef" stroke-width="0.5" opacity="0.7"/>
+            }
+            
+            <!-- Axes -->
+            <line x1="40" y1="260" x2="360" y2="260" stroke="#333" stroke-width="2"/>
+            <line x1="40" y1="40" x2="40" y2="260" stroke="#333" stroke-width="2"/>
+            
+            <!-- Axis labels -->
+            <text x="200" y="290" text-anchor="middle" class="axis-label">X Axis</text>
+            <text x="15" y="150" text-anchor="middle" transform="rotate(-90, 15, 150)" class="axis-label">Y Axis</text>
+            
+            <!-- Scale labels -->
+            <text x="40" y="280" text-anchor="middle" class="scale-label">0</text>
+            <text x="72" y="280" text-anchor="middle" class="scale-label">10</text>
+            <text x="104" y="280" text-anchor="middle" class="scale-label">20</text>
+            <text x="136" y="280" text-anchor="middle" class="scale-label">30</text>
+            <text x="168" y="280" text-anchor="middle" class="scale-label">40</text>
+            <text x="200" y="280" text-anchor="middle" class="scale-label">50</text>
+            <text x="232" y="280" text-anchor="middle" class="scale-label">60</text>
+            <text x="264" y="280" text-anchor="middle" class="scale-label">70</text>
+            <text x="296" y="280" text-anchor="middle" class="scale-label">80</text>
+            <text x="328" y="280" text-anchor="middle" class="scale-label">90</text>
+            <text x="360" y="280" text-anchor="middle" class="scale-label">100</text>
+            
+            <text x="30" y="265" text-anchor="end" class="scale-label">0</text>
+            <text x="30" y="243" text-anchor="end" class="scale-label">10</text>
+            <text x="30" y="221" text-anchor="end" class="scale-label">20</text>
+            <text x="30" y="199" text-anchor="end" class="scale-label">30</text>
+            <text x="30" y="177" text-anchor="end" class="scale-label">40</text>
+            <text x="30" y="155" text-anchor="end" class="scale-label">50</text>
+            <text x="30" y="133" text-anchor="end" class="scale-label">60</text>
+            <text x="30" y="111" text-anchor="end" class="scale-label">70</text>
+            <text x="30" y="89" text-anchor="end" class="scale-label">80</text>
+            <text x="30" y="67" text-anchor="end" class="scale-label">90</text>
+            <text x="30" y="45" text-anchor="end" class="scale-label">100</text>
+            
+            <!-- Plot line from (0,0) to (100,100) -->
+            <!-- Converting coordinates: (0,0) -> (40, 260), (100,100) -> (360, 40) -->
+            <line x1="40" y1="260" x2="360" y2="40" 
+                  stroke="#007bff" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Data points -->
+            <circle cx="40" cy="260" r="4" fill="#007bff"/>
+            <circle cx="360" cy="40" r="4" fill="#007bff"/>
+            
+            <!-- Point labels -->
+            <text x="45" y="275" class="point-label">(0,0)</text>
+            <text x="320" y="35" class="point-label">(100,100)</text>
+        </svg>
+    </div>
+    
+    <div class="plot-info mt-3">
+        <p class="text-muted">
+            <small>Simple line plot showing a line from point (0,0) to (100,100)</small>
+        </p>
+    </div>
+</div>
+
+<style>
+    .modulator-plot {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin: 20px 0;
+    }
+    
+    .plot-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+    
+    .plot-svg {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: white;
+    }
+    
+    .axis-label {
+        font-size: 14px;
+        font-weight: 600;
+        fill: #495057;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .scale-label {
+        font-size: 12px;
+        fill: #6c757d;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .point-label {
+        font-size: 12px;
+        fill: #007bff;
+        font-weight: 600;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .plot-info {
+        text-align: center;
+    }
+</style>
+
+@code {
+    // Optional parameters for customization
+    [Parameter] public string Title { get; set; } = "Modulator Plot";
+    [Parameter] public int Width { get; set; } = 400;
+    [Parameter] public int Height { get; set; } = 300;
+    [Parameter] public string LineColor { get; set; } = "#007bff";
+}

@@ -5,6 +5,7 @@
 @implements IAsyncDisposable
 
 @using ModulatorConfigurator.Models
+@using ModulatorConfigurator.Components
 
 <PageTitle>Modulator Configurator</PageTitle>
 
@@ -90,7 +91,13 @@
                    @bind="modulator.Name" 
                    class="fs-5 fw-bold mb-2 border p-2 w-50 form-control" 
                    placeholder="Modulator Name" />
-            
+            <!-- ModulatorPlot Component with explicit testing -->
+            <div style="border: 2px solid red; padding: 10px; margin: 10px 0;">
+                <h5 style="color: red;">Debug: Plot Component Should Appear Below</h5>
+                <ModulatorPlot />
+                <h5 style="color: red;">Debug: Plot Component Should Appear Above</h5>
+            </div>
+
             <div class="row mb-3">
                 <div class="col-md-6">
                     <input class="form-control mb-2" 
